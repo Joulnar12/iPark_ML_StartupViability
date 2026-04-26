@@ -432,9 +432,8 @@ with c2:
     st.markdown(f'<div class="metric" style="--a:{rc}"><div class="metric-label">Lebanon Risk Level</div><div class="metric-val" style="color:{rc}">{risk_level}</div><div class="metric-desc">Based on baseline vs global survival thresholds</div></div>', unsafe_allow_html=True)
 with c3:
     top_risk_feat  = top3[0]
-    top_risk_label = FEATURE_LABELS.get(top_risk_feat, top_risk_feat)
     top_risk_score = float(startup_df.loc[top_risk_feat, 'Personal Risk'])
-    st.markdown(f'<div class="metric" style="--a:{IPARK_COLORS[top_risk_feat]}"><div class="metric-label">Highest Lebanese Risk</div><div class="metric-val" style="color:{IPARK_COLORS[top_risk_feat]};font-size:1.6rem">{top_risk_label}</div><div class="metric-desc">{IPARK_REASONS[top_risk_feat]} · score {top_risk_score:.3f}</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric" style="--a:{IPARK_COLORS[top_risk_feat]}"><div class="metric-label">Highest Lebanese Risk</div><div class="metric-val" style="color:{IPARK_COLORS[top_risk_feat]}">{FEATURE_LABELS[top_risk_feat]}</div><div class="metric-desc">{IPARK_REASONS[top_risk_feat]} · score {top_risk_score:.3f}</div></div>', unsafe_allow_html=True)
 
 st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 
@@ -462,8 +461,17 @@ with left:
         </div>""", unsafe_allow_html=True)
 
 with right:
-    strengths = [f for f in startup_df.index if float(startup_df.loc[f,'Personal Risk']) <= float(adjusted_df.loc[f,'Adjusted Risk']) * 1.05]
-    gaps_l    = [f for f in startup_df.index if float(startup_df.loc[f,'Personal Risk']) > float(adjusted_df.loc[f,'Adjusted Risk']) * 1.2]
+    # Strengths = features where you are AT or ABOVE the dataset median
+    # Gaps = features where you are BELOW the dataset median
+    strengths = []
+    gaps_l    = []
+    for f in startup_df.index:
+        val = startup_values[f]
+        med = MEDIANS[f]
+        if val >= med:
+            strengths.append(f)
+        else:
+            gaps_l.append(f)
 
     st.markdown('<div class="sec-title">Strengths</div>', unsafe_allow_html=True)
     if strengths:
