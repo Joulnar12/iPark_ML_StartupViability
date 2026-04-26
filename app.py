@@ -40,15 +40,6 @@ section[data-testid="stSidebar"] input {
     border-radius: 8px !important;
 }
 section[data-testid="stSidebar"] .stSlider > div > div > div { background: #e8a0aa !important; }
-section[data-testid="stSidebar"] .stSlider span,
-section[data-testid="stSidebar"] .stSlider p,
-section[data-testid="stSidebar"] .stSlider div[data-testid="stTickBarMin"],
-section[data-testid="stSidebar"] .stSlider div[data-testid="stTickBarMax"] {
-    background: transparent !important;
-    background-color: transparent !important;
-    color: rgba(255,255,255,0.4) !important;
-    font-size: 10px !important;
-}
 section[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.1) !important; }
 section[data-testid="stSidebar"] h2 { color: white !important; font-family: 'Playfair Display', serif !important; }
 section[data-testid="stSidebar"] h3 { color: rgba(255,255,255,0.6) !important; font-size: 12px !important; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -134,6 +125,12 @@ section[data-testid="stSidebar"] p { color: rgba(255,255,255,0.5) !important; }
 .rec-act:last-child { border-bottom:none; }
 .rec-act::before { content:'→ '; color:#6b1a2a; font-weight:600; }
 
+.weight-table { background:white; border:1px solid #ece9e4; border-radius:16px; padding:1.5rem; margin-top:1rem; }
+.weight-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f5f2ee; }
+.weight-row:last-child { border-bottom:none; }
+.weight-feat { font-size:12px; font-weight:500; color:#333; }
+.weight-badge { font-size:11px; padding:2px 8px; border-radius:100px; background:#faf9f7; border:1px solid #ece9e4; color:#666; }
+
 .footer { text-align:center; font-size:11px; color:#ccc; padding:2rem 0 1rem; letter-spacing:0.04em; }
 #MainMenu, footer, header { visibility: hidden; }
 </style>
@@ -141,119 +138,256 @@ section[data-testid="stSidebar"] p { color: rgba(255,255,255,0.5) !important; }
 
 # ── Load model ────────────────────────────────────────────────────────
 @st.cache_resource
-def load_model():
+def load_assets():
     clf      = joblib.load('rf_model.pkl')
     FEATURES = joblib.load('features.pkl')
     df       = pd.read_csv('startup_data.csv')
     df['reached_series_b'] = ((df['has_roundB']==1)|(df['has_roundC']==1)).astype(int)
     return clf, df, FEATURES
 
-clf, df, FEATURES = load_model()
+clf, df, FEATURES = load_assets()
 
-# ── Data ──────────────────────────────────────────────────────────────
+# ── Lebanese Risk Layer — exactly as in notebook ──────────────────────
 LEBANON_RISKS = {
-    'relationships':          {'hani':'Co-founder conflict (slide #2)',            'w':1.50},
-    'milestones':             {'hani':'Market turmoil + No market interest (#4+6)','w':1.45},
-    'funding_rounds':         {'hani':'Lack of VC + No pre-seed funds (#7+8)',     'w':1.40},
-    'is_top500':              {'hani':'Lack of growth mindset (slide #3)',          'w':1.40},
-    'reached_series_b':       {'hani':'Founders never get to market (slide #10)',  'w':1.30},
-    'age_first_funding_year': {'hani':'Unclear direction (slide #11)',              'w':1.20},
+    'relationships': {
+        'iPark_reason':  'Co-founder conflict (slide #2)',
+        'iPark_weight':  1.5,
+        'lit_evidence':  '875K left Lebanon 2019–2022. 63% talent emigrated.',
+        'lit_weight':    1.5,
+        'final_weight':  (1.5 + 1.5) / 2,
+    },
+    'is_top500': {
+        'iPark_reason':  'Lack of growth mindset (slide #3)',
+        'iPark_weight':  1.5,
+        'lit_evidence':  '54.3% startups relocated. Ecosystem ranked #77 globally.',
+        'lit_weight':    1.3,
+        'final_weight':  (1.5 + 1.3) / 2,
+    },
+    'milestones': {
+        'iPark_reason':  'Market turmoil + Lack of market interest (slides #4+6)',
+        'iPark_weight':  1.4,
+        'lit_evidence':  'Pound lost 90%+ value. Poverty jumped from 30% to 85–90%.',
+        'lit_weight':    1.5,
+        'final_weight':  (1.4 + 1.5) / 2,
+    },
+    'funding_rounds': {
+        'iPark_reason':  'Lack of VC + No pre-seed funds (slides #7+8)',
+        'iPark_weight':  1.3,
+        'lit_evidence':  'Funding dropped 95% in 2023. Investment shrank 70% 2017–2021.',
+        'lit_weight':    1.5,
+        'final_weight':  (1.3 + 1.5) / 2,
+    },
+    'reached_series_b': {
+        'iPark_reason':  'Founders never really get to market (slide #10)',
+        'iPark_weight':  1.2,
+        'lit_evidence':  '91.3% startups affected by infrastructure. 9h/day without electricity.',
+        'lit_weight':    1.4,
+        'final_weight':  (1.2 + 1.4) / 2,
+    },
+    'age_first_funding_year': {
+        'iPark_reason':  'Unclear direction (slide #11)',
+        'iPark_weight':  1.1,
+        'lit_evidence':  'GDP shrank 53.4% 2019–2021. Top 3 worst crisis since mid-19th century.',
+        'lit_weight':    1.3,
+        'final_weight':  (1.1 + 1.3) / 2,
+    },
 }
 
-RECS = {
-    'relationships':          {'t':'Network & Team Risk',    'c':'#8b5cf6','s':'Amplified by brain drain',              'a':['Apply to iPark mentorship network — 50+ mentors by 2027','Target diaspora via iPark Global Bridge Program','Establish co-founder agreements early','Recruit remote diaspora talent']},
-    'milestones':             {'t':'Market Validation Risk', 'c':'#d97706','s':'Amplified by purchasing power collapse', 'a':['Validate with dollar-paying customers first','Price in USD not LBP','Target MENA/EU market from day 1','Pursue iPark AIM program for validation']},
-    'age_first_funding_year': {'t':'Timing Risk',            'c':'#059669','s':'Amplified by macro instability',         'a':['Define 12-month milestones only','Track 3 metrics: revenue, users, burn','Document pivot criteria in advance','Attend iPark pitch clinics (8+/year)']},
-    'is_top500':              {'t':'Ecosystem Risk',         'c':'#0891b2','s':'Amplified by weak accelerator network',  'a':['Apply to iPark BDD incubation program','Consider Cyprus via iPark Mediterraneo','Apply to EU Horizon grants','Join Flat6Labs or Wamda']},
-    'funding_rounds':         {'t':'Funding Access Risk',    'c':'#dc2626','s':'Amplified by VC collapse',               'a':['Target diaspora investors via iPark Global Bridge','Apply to EU Horizon grants (non-dilutive)','Consider revenue-based financing','Set up Stripe Atlas or Wise Business']},
-    'reached_series_b':       {'t':'Execution Risk',         'c':'#2563eb','s':'Amplified by infrastructure failure',    'a':['Use cloud infrastructure — avoid physical servers','Build resilience plan for power outages','Establish international banking early','Consider Cyprus entity for international ops']},
+# iPark failure reason color mapping (from notebook)
+IPARK_COLORS = {
+    'relationships':          '#8e44ad',   # ⑦ Not the right team
+    'milestones':             '#e67e22',   # ② No market need
+    'funding_rounds':         '#e74c3c',   # ① Ran out of cash
+    'is_top500':              '#16a085',   # ③ Got outcompeted
+    'reached_series_b':       '#2980b9',   # ④ Flawed business model
+    'age_first_funding_year': '#27ae60',   # ⑧ Product mistimed
 }
 
-LABELS = {
-    'relationships':'Team Network','milestones':'Milestones',
-    'funding_rounds':'Funding Rounds','is_top500':'Top Accelerator',
-    'reached_series_b':'Series B+','age_first_funding_year':'Funding Timing',
+IPARK_REASONS = {
+    'relationships':          '⑦ Not the right team',
+    'milestones':             '② No market need',
+    'funding_rounds':         '① Ran out of cash',
+    'is_top500':              '③ Got outcompeted',
+    'reached_series_b':       '④ Flawed business model',
+    'age_first_funding_year': '⑧ Product mistimed',
 }
 
-fmax = {
-    'relationships':          df['relationships'].quantile(0.95),
-    'milestones':             df['milestones'].quantile(0.95),
-    'funding_rounds':         df['funding_rounds'].quantile(0.95),
-    'is_top500':              1,
-    'reached_series_b':       1,
-    'age_first_funding_year': df['age_first_funding_year'].quantile(0.95),
+FEATURE_LABELS = {
+    'relationships':          'Team Network',
+    'milestones':             'Milestones',
+    'funding_rounds':         'Funding Rounds',
+    'is_top500':              'Top Accelerator',
+    'reached_series_b':       'Series B+',
+    'age_first_funding_year': 'Funding Timing',
 }
 
-fmed = {
+RECOMMENDATIONS = {
+    'relationships': {
+        'risk':    'Network & Team Risk — amplified by brain drain',
+        'actions': [
+            'Apply to iPark mentorship network — 50+ mentors by 2027 target',
+            'Target diaspora connections via iPark Global Bridge Program',
+            'Establish co-founder agreements early to reduce conflict risk',
+            'Recruit remote diaspora talent — competitive at Lebanese market wages',
+        ]
+    },
+    'milestones': {
+        'risk':    'Market Validation Risk — amplified by purchasing power collapse',
+        'actions': [
+            'Validate with dollar-paying customers — diaspora or export market first',
+            'Price in USD not LBP — protects against further devaluation',
+            'Target MENA or EU market from day 1, use Lebanon as test bed only',
+            'Pursue iPark AIM program for structured market validation support',
+        ]
+    },
+    'age_first_funding_year': {
+        'risk':    'Timing Risk — amplified by macro instability',
+        'actions': [
+            'Define 12-month milestones only — long-term planning unreliable in Lebanon',
+            'Track 3 core metrics weekly: revenue, users, burn rate',
+            'Document pivot criteria in advance to avoid reactive pivoting',
+            'Attend iPark pitch clinics (8+/year) to sharpen market positioning',
+        ]
+    },
+    'is_top500': {
+        'risk':    'Ecosystem Risk — amplified by weakened local accelerator network',
+        'actions': [
+            'Apply to iPark BDD incubation program — strongest local network remaining',
+            'Consider soft-landing to Cyprus via iPark Mediterraneo program',
+            'Apply to EU Horizon grants — Lebanon still eligible',
+            'Join regional accelerators (Flat6Labs, Wamda) for ecosystem access',
+        ]
+    },
+    'funding_rounds': {
+        'risk':    'Funding Risk — amplified by VC collapse and no pre-seed funds',
+        'actions': [
+            'Target diaspora investors via iPark Global Bridge Program',
+            'Apply to EU Horizon grants — non-dilutive capital option',
+            'Consider revenue-based financing to avoid equity dilution',
+            'Set up international payment account (Stripe Atlas, Wise Business)',
+        ]
+    },
+    'reached_series_b': {
+        'risk':    'Execution Risk — amplified by infrastructure failure',
+        'actions': [
+            'Use cloud infrastructure (AWS/GCP) — avoid physical server dependency',
+            'Build operational resilience plan for power and connectivity outages',
+            'Establish international banking early — Lebanese banks unreliable',
+            'Consider Cyprus entity via iPark Mediterraneo for international operations',
+        ]
+    },
+}
+
+# ── Dataset medians (for personal risk calculation) ───────────────────
+MEDIANS = {
     'relationships':          df['relationships'].median(),
     'milestones':             df['milestones'].median(),
     'funding_rounds':         df['funding_rounds'].median(),
-    'is_top500':              df['is_top500'].median(),
-    'reached_series_b':       df['reached_series_b'].median(),
+    'is_top500':              0.5,
+    'reached_series_b':       0.5,
     'age_first_funding_year': df['age_first_funding_year'].median(),
 }
 
-# ── Sidebar ───────────────────────────────────────────────────────────
+# ── Global feature importance from RF (averaged RF+XGB as in notebook) ─
+@st.cache_data
+def compute_global_adjusted_risks():
+    """
+    Replicates the notebook's adjusted_df:
+    GlobalImportance = average of RF + XGB feature importances for the 6 Lebanese risk features
+    AdjustedRisk = GlobalImportance × FinalWeight
+    """
+    rf_imp  = dict(zip(FEATURES, clf.feature_importances_))
+    # We only have RF saved; notebook averaged RF+XGB but RF is the deployed model
+    # Use RF importances as global importance (consistent with saved model)
+    rows = {}
+    for feat, info in LEBANON_RISKS.items():
+        global_imp    = rf_imp.get(feat, 0)
+        final_weight  = info['final_weight']
+        adjusted      = global_imp * final_weight
+        rows[feat] = {
+            'Global Risk':   round(global_imp,  4),
+            'Final Weight':  round(final_weight, 2),
+            'Adjusted Risk': round(adjusted,     4),
+            'iPark Reason':  info['iPark_reason'],
+        }
+    return pd.DataFrame(rows).T.sort_values('Adjusted Risk', ascending=False)
+
+adjusted_df = compute_global_adjusted_risks()
+
+# ── Sidebar inputs ────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("## 🚀 Startup Profile")
     st.markdown("---")
-    sname  = st.text_input("Startup name", "My Startup")
+    sname = st.text_input("Startup name", "My Startup")
     st.markdown("### Funding")
-    fr     = st.slider("Funding rounds", 0, 10, 1)
-    hvc    = st.selectbox("VC backing?",    ["No","Yes"])
-    hang   = st.selectbox("Angel backing?", ["No","Yes"])
-    hra    = st.selectbox("Series A?",      ["No","Yes"])
-    hrb    = st.selectbox("Series B?",      ["No","Yes"])
-    hrc    = st.selectbox("Series C?",      ["No","Yes"])
-    hrd    = st.selectbox("Series D?",      ["No","Yes"])
+    fr    = st.slider("Funding rounds completed", 0, 10, 1)
+    hvc   = st.selectbox("VC backing?",    ["No", "Yes"])
+    hang  = st.selectbox("Angel backing?", ["No", "Yes"])
+    hra   = st.selectbox("Series A?",      ["No", "Yes"])
+    hrb   = st.selectbox("Series B?",      ["No", "Yes"])
+    hrc   = st.selectbox("Series C?",      ["No", "Yes"])
+    hrd   = st.selectbox("Series D?",      ["No", "Yes"])
     st.markdown("### Team & Network")
-    rels   = st.slider("Professional connections", 0, 30, 3)
-    top500 = st.selectbox("In top accelerator?", ["No","Yes"])
+    rels  = st.slider("Professional connections", 0, 30, 3)
+    top500 = st.selectbox("In top accelerator network?", ["No", "Yes"])
     st.markdown("### Product & Timing")
-    ms     = st.slider("Milestones hit", 0, 8, 1)
-    aff    = st.slider("Years to first funding", 0.0, 10.0, 1.0, 0.5)
-    alf    = st.slider("Years to last funding",  0.0, 15.0, 2.0, 0.5)
+    ms    = st.slider("Milestones hit", 0, 8, 1)
+    aff   = st.slider("Years from founding to first funding", 0.0, 10.0, 1.0, 0.5)
+    alf   = st.slider("Years from founding to last funding",  0.0, 15.0, 2.0, 0.5)
 
 # ── Compute ───────────────────────────────────────────────────────────
-HVC=1 if hvc=="Yes" else 0; HANG=1 if hang=="Yes" else 0
-HRA=1 if hra=="Yes" else 0; HRB=1 if hrb=="Yes" else 0
-HRC=1 if hrc=="Yes" else 0; HRD=1 if hrd=="Yes" else 0
-IS500=1 if top500=="Yes" else 0; RSB=int(HRB or HRC)
+HVC  = 1 if hvc  == "Yes" else 0
+HANG = 1 if hang == "Yes" else 0
+HRA  = 1 if hra  == "Yes" else 0
+HRB  = 1 if hrb  == "Yes" else 0
+HRC  = 1 if hrc  == "Yes" else 0
+HRD  = 1 if hrd  == "Yes" else 0
+IS500 = 1 if top500 == "Yes" else 0
+RSB  = int(HRB or HRC)
 
-fv   = pd.DataFrame([[fr,HVC,HANG,HRA,HRB,HRC,HRD,ms,IS500,RSB,rels,aff,alf]],columns=FEATURES)
-base = clf.predict_proba(fv)[0][1]*100
+# Step 1 — Baseline ML prediction (exactly as in notebook)
+feat_vec = pd.DataFrame([[
+    fr, HVC, HANG, HRA, HRB, HRC, HRD,
+    ms, IS500, RSB, rels, aff, alf
+]], columns=FEATURES)
 
-fvals = {'relationships':rels,'milestones':ms,'funding_rounds':fr,
-         'is_top500':IS500,'reached_series_b':RSB,'age_first_funding_year':aff}
+baseline = clf.predict_proba(feat_vec)[0][1] * 100
 
-# Personal risk — deviation from median amplified by Lebanese weight
-pr = {}
+# Step 2 — Personal risk ranking (exactly as in notebook dashboard cell)
+# personal = adjusted_df.loc[feat, 'Adjusted Risk'] * (1 + gap)
+# gap = max(0, median - value) / (median + 1e-9)  — below median = higher risk
+startup_values = {
+    'relationships':          rels,
+    'milestones':             ms,
+    'funding_rounds':         fr,
+    'is_top500':              IS500,
+    'reached_series_b':       RSB,
+    'age_first_funding_year': aff,
+}
+
+startup_risks = {}
 for feat, info in LEBANON_RISKS.items():
-    val  = fvals[feat]
-    mx   = fmax[feat]
-    med  = fmed[feat]
-    ns   = min(val / (mx + 1e-9), 1.0)
-    # Extra penalty for being below dataset median
-    below_median = max(0, (med - val) / (med + 1e-9)) * 0.3
-    p_risk = (1 - ns + below_median) * (info['w'] - 1.0)
-    pr[feat] = {'r': round(p_risk, 4), 'ns': round(ns, 3)}
+    val      = startup_values[feat]
+    med      = MEDIANS[feat]
+    gap      = max(0, med - val) / (med + 1e-9)
+    personal = float(adjusted_df.loc[feat, 'Adjusted Risk']) * (1 + gap)
+    startup_risks[feat] = round(personal, 4)
 
-pdf = pd.DataFrame({'Personal Risk':[pr[f]['r'] for f in pr],
-                    'Norm Score':   [pr[f]['ns'] for f in pr]},
-                   index=list(pr.keys())).sort_values('Personal Risk',ascending=False)
+startup_df = pd.DataFrame.from_dict(
+    startup_risks, orient='index', columns=['Personal Risk']
+).sort_values('Personal Risk', ascending=False)
 
-penalty  = pdf['Personal Risk'].sum()*25
-adjusted = max(0, base-penalty)
-gap      = base-adjusted
-rl  = 'CRITICAL' if adjusted<30 else 'HIGH' if adjusted<45 else 'MODERATE' if adjusted<60 else 'GOOD'
-rc  = {'GOOD':'#059669','MODERATE':'#d97706','HIGH':'#dc2626','CRITICAL':'#7c3aed'}[rl]
-rbg = {'GOOD':'rgba(5,150,105,0.08)','MODERATE':'rgba(217,119,6,0.08)',
-       'HIGH':'rgba(220,38,38,0.08)','CRITICAL':'rgba(124,58,237,0.08)'}[rl]
+# Step 3 — Risk level based on baseline (as in notebook)
+risk_level = ('CRITICAL' if baseline < 40 else
+              'HIGH'     if baseline < 55 else
+              'MODERATE' if baseline < 70 else 'GOOD')
 
-strengths = [f for f in pdf.index if pdf.loc[f,'Norm Score']>=0.6]
-gaps_l    = [f for f in pdf.index if pdf.loc[f,'Norm Score']<0.4]
-top3      = list(pdf.head(3).index)
-maxr      = pdf['Personal Risk'].max()
+rc  = {'GOOD': '#059669', 'MODERATE': '#d97706', 'HIGH': '#dc2626', 'CRITICAL': '#7c3aed'}[risk_level]
+rbg = {'GOOD': 'rgba(5,150,105,0.08)', 'MODERATE': 'rgba(217,119,6,0.08)',
+       'HIGH': 'rgba(220,38,38,0.08)', 'CRITICAL': 'rgba(124,58,237,0.08)'}[risk_level]
+
+top3 = list(startup_df.head(3).index)
+maxr = startup_df['Personal Risk'].max()
 
 # ── ABOUT ─────────────────────────────────────────────────────────────
 st.markdown("""
@@ -263,14 +397,16 @@ st.markdown("""
     <div class="about-text">
         This decision-support tool uses machine learning trained on 923 real startup outcomes
         to predict baseline viability, then applies a Lebanese risk amplification layer grounded
-        in iPark's expert research (Haidar & Nohra, 2024) and peer-reviewed literature.
+        in iPark's expert research (Haidar &amp; Nohra, 2024) and peer-reviewed literature.
         The model achieves 80% AUC on held-out test data and confirms 6 of iPark's
         12 globally-identified failure reasons through data alone.
+        Risk level is based on the global ML baseline. The Lebanese layer re-ranks which
+        failure signals are most amplified by Lebanon's specific conditions.
     </div>
     <div class="about-grid">
         <div class="about-item">
             <div class="about-item-label">Data Source</div>
-            <div class="about-item-val">923 real startup outcomes · Verified acquisition and closure events · Global dataset</div>
+            <div class="about-item-val">923 real startup outcomes · Verified acquisition and closure events · Crunchbase</div>
         </div>
         <div class="about-item">
             <div class="about-item-label">ML Model</div>
@@ -278,7 +414,7 @@ st.markdown("""
         </div>
         <div class="about-item">
             <div class="about-item-label">Lebanese Risk Layer</div>
-            <div class="about-item-val">iPark expert research (Haidar & Nohra, 2024) + World Bank, KAS/Arabnet, AGBI literature</div>
+            <div class="about-item-val">GlobalImportance × FinalWeight · FinalWeight = (iPark weight + Literature weight) / 2</div>
         </div>
     </div>
 </div>
@@ -291,90 +427,128 @@ st.markdown(f"""
     <div class="hero-name">🚀 {sname}</div>
     <div class="hero-sub">iPark · AUB Innovation Park · Lebanese Startup Viability Assessment</div>
   </div>
-  <span class="hero-badge" style="background:{rbg};color:{rc};border:1px solid {rc}33">{rl}</span>
+  <span class="hero-badge" style="background:{rbg};color:{rc};border:1px solid {rc}33">{risk_level}</span>
 </div>""", unsafe_allow_html=True)
 
 # ── METRICS ───────────────────────────────────────────────────────────
-c1,c2,c3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 with c1:
-    st.markdown(f'<div class="metric" style="--a:#6b1a2a"><div class="metric-label">Baseline Viability</div><div class="metric-val" style="color:#6b1a2a">{base:.1f}%</div><div class="metric-desc">Global ML · Random Forest · AUC 80%</div></div>',unsafe_allow_html=True)
+    st.markdown(f'<div class="metric" style="--a:#6b1a2a"><div class="metric-label">Baseline Viability</div><div class="metric-val" style="color:#6b1a2a">{baseline:.1f}%</div><div class="metric-desc">Global ML · Random Forest · AUC 80%</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown(f'<div class="metric" style="--a:{rc}"><div class="metric-label">Lebanon-Adjusted Viability</div><div class="metric-val" style="color:{rc}">{adjusted:.1f}%</div><div class="metric-desc">After Lebanese risk amplification</div></div>',unsafe_allow_html=True)
+    st.markdown(f'<div class="metric" style="--a:{rc}"><div class="metric-label">Risk Level</div><div class="metric-val" style="color:{rc}">{risk_level}</div><div class="metric-desc">Based on baseline vs global survival thresholds</div></div>', unsafe_allow_html=True)
 with c3:
-    st.markdown(f'<div class="metric" style="--a:#dc2626"><div class="metric-label">Lebanese Risk Penalty</div><div class="metric-val" style="color:#dc2626">−{gap:.1f}%</div><div class="metric-desc">Structural amplification of failure signals</div></div>',unsafe_allow_html=True)
+    top_risk_feat = top3[0]
+    top_risk_label = FEATURE_LABELS.get(top_risk_feat, top_risk_feat)
+    st.markdown(f'<div class="metric" style="--a:{IPARK_COLORS[top_risk_feat]}"><div class="metric-label">Highest Lebanese Risk</div><div class="metric-val" style="color:{IPARK_COLORS[top_risk_feat]};font-size:1.4rem">{top_risk_label}</div><div class="metric-desc">{IPARK_REASONS[top_risk_feat]}</div></div>', unsafe_allow_html=True)
 
-st.markdown("<div style='height:1.5rem'></div>",unsafe_allow_html=True)
+st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 
 # ── MIDDLE ────────────────────────────────────────────────────────────
-left, right = st.columns([1.4,1])
+left, right = st.columns([1.4, 1])
 
 with left:
-    st.markdown('<div class="sec-title">Personal Risk Ranking</div>',unsafe_allow_html=True)
-    st.caption("How Lebanon amplifies YOUR specific failure signals based on your inputs")
-    for feat in pdf.index:
-        rv  = float(pdf.loc[feat,'Personal Risk'])
-        pct = (rv/maxr*100) if maxr>0 else 0
-        col = RECS[feat]['c']
-        lbl = LABELS.get(feat,feat)
+    st.markdown('<div class="sec-title">Personal Risk Ranking — Lebanon Amplification</div>', unsafe_allow_html=True)
+    st.caption("Adjusted Risk = Global Feature Importance × Lebanese Weight × Personal Gap factor")
+    for feat in startup_df.index:
+        rv   = float(startup_df.loc[feat, 'Personal Risk'])
+        pct  = (rv / maxr * 100) if maxr > 0 else 0
+        col  = IPARK_COLORS[feat]
+        lbl  = FEATURE_LABELS.get(feat, feat)
+        reason = IPARK_REASONS[feat]
+        global_risk = float(adjusted_df.loc[feat, 'Adjusted Risk'])
+        fw   = float(adjusted_df.loc[feat, 'Final Weight'])
         st.markdown(f"""
         <div class="rbar">
-          <div class="rbar-head"><span class="rbar-label">{lbl}</span><span class="rbar-val">{rv:.3f}</span></div>
+          <div class="rbar-head">
+            <span class="rbar-label">{lbl} <span style="font-size:10px;color:#bbb;font-weight:400">· {reason}</span></span>
+            <span class="rbar-val">{rv:.4f} ({fw}×)</span>
+          </div>
           <div class="rbar-track"><div class="rbar-fill" style="width:{pct}%;background:{col}"></div></div>
-        </div>""",unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
 
 with right:
-    st.markdown('<div class="sec-title">Strengths</div>',unsafe_allow_html=True)
-    if strengths:
-        tags="".join([f'<span class="tg tg-g">✓ {LABELS.get(f,f)}</span>' for f in strengths])
-        st.markdown(f'<div class="tag-row">{tags}</div>',unsafe_allow_html=True)
-    else:
-        st.markdown('<span style="font-size:12px;color:#bbb">No strong signals detected</span>',unsafe_allow_html=True)
+    st.markdown('<div class="sec-title">Lebanese Weight Table</div>', unsafe_allow_html=True)
+    st.markdown('<div class="weight-table">', unsafe_allow_html=True)
+    for feat, info in sorted(LEBANON_RISKS.items(), key=lambda x: -x[1]['final_weight']):
+        lbl = FEATURE_LABELS.get(feat, feat)
+        col = IPARK_COLORS[feat]
+        fw  = info['final_weight']
+        st.markdown(f"""
+        <div class="weight-row">
+          <span class="weight-feat" style="color:{col}">● {lbl}</span>
+          <span class="weight-badge">{fw}×</span>
+        </div>""", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<div style='height:1.25rem'></div>",unsafe_allow_html=True)
-    st.markdown('<div class="sec-title">Gap Alerts</div>',unsafe_allow_html=True)
-    if gaps_l:
-        tags="".join([f'<span class="tg tg-r">△ {LABELS.get(f,f)}</span>' for f in gaps_l])
-        st.markdown(f'<div class="tag-row">{tags}</div>',unsafe_allow_html=True)
-    else:
-        st.markdown('<span style="font-size:12px;color:#bbb">No critical gaps detected</span>',unsafe_allow_html=True)
-
-    st.markdown("<div style='height:1.5rem'></div>",unsafe_allow_html=True)
-    st.markdown('<div class="sec-title">Viability Comparison</div>',unsafe_allow_html=True)
+    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="sec-title">Baseline Score</div>', unsafe_allow_html=True)
     st.markdown(f"""
     <div class="vbar-row">
-      <div class="vbar-head"><span>Baseline (Global ML)</span><span style="color:#6b1a2a;font-weight:600">{base:.1f}%</span></div>
-      <div class="vbar-track"><div class="vbar-fill" style="width:{base}%;background:#6b1a2a"></div></div>
+      <div class="vbar-head">
+        <span>Your startup (global ML)</span>
+        <span style="color:#6b1a2a;font-weight:600">{baseline:.1f}%</span>
+      </div>
+      <div class="vbar-track"><div class="vbar-fill" style="width:{baseline}%;background:#6b1a2a"></div></div>
     </div>
-    <div class="vbar-row">
-      <div class="vbar-head"><span>Lebanon Adjusted</span><span style="color:{rc};font-weight:600">{adjusted:.1f}%</span></div>
-      <div class="vbar-track"><div class="vbar-fill" style="width:{adjusted}%;background:{rc}"></div></div>
-    </div>""",unsafe_allow_html=True)
+    <div style="font-size:10px;color:#bbb;margin-top:6px">
+      Thresholds: GOOD ≥70% · MODERATE 55–70% · HIGH 40–55% · CRITICAL &lt;40%
+    </div>""", unsafe_allow_html=True)
 
-st.markdown("<div style='height:1.5rem'></div>",unsafe_allow_html=True)
+st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 
 # ── RECOMMENDATIONS ───────────────────────────────────────────────────
-st.markdown('<div class="sec-title">Top 3 Recommendations — based on your personal risk profile</div>',unsafe_allow_html=True)
-st.caption("Ranked by your highest adjusted risk scores · Linked to iPark Lebanon research & programs")
+st.markdown('<div class="sec-title">Top 3 Recommendations — Your Personal Lebanese Risk Profile</div>', unsafe_allow_html=True)
+st.caption("Ranked by your personal adjusted risk · Linked to iPark Lebanon programs")
 
-rc1,rc2,rc3 = st.columns(3)
-for i,(feat,col) in enumerate(zip(top3,[rc1,rc2,rc3]),1):
-    rec   = RECS[feat]
+rc1, rc2, rc3 = st.columns(3)
+for i, (feat, col) in enumerate(zip(top3, [rc1, rc2, rc3]), 1):
+    rec   = RECOMMENDATIONS[feat]
     info  = LEBANON_RISKS[feat]
-    score = float(pdf.loc[feat,'Personal Risk'])
-    acts  = "".join([f'<div class="rec-act">{a}</div>' for a in rec['a']])
+    score = float(startup_df.loc[feat, 'Personal Risk'])
+    fw    = info['final_weight']
+    color = IPARK_COLORS[feat]
+    acts  = "".join([f'<div class="rec-act">{a}</div>' for a in rec['actions']])
     with col:
         st.markdown(f"""
-        <div class="rec" style="--c:{rec['c']}">
-          <div class="rec-num">Priority #{i} · Risk score {score:.3f}</div>
-          <div class="rec-title" style="color:{rec['c']}">{rec['t']}</div>
-          <div class="rec-sub">{info['hani']}</div>
+        <div class="rec" style="--c:{color}">
+          <div class="rec-num">Priority #{i} · Risk {score:.4f} · Weight {fw}×</div>
+          <div class="rec-title" style="color:{color}">{FEATURE_LABELS[feat]}</div>
+          <div class="rec-sub">{info['iPark_reason']}</div>
           {acts}
-        </div>""",unsafe_allow_html=True)
+        </div>""", unsafe_allow_html=True)
+
+# ── METHODOLOGY NOTE ──────────────────────────────────────────────────
+st.markdown("<div style='height:2rem'></div>", unsafe_allow_html=True)
+with st.expander("Methodology — How the risk ranking works"):
+    st.markdown("""
+**Step 1 — Global ML Baseline**  
+A Random Forest model trained on 923 Crunchbase startups predicts your acquisition probability.
+Risk level thresholds: GOOD ≥70% · MODERATE 55–70% · HIGH 40–55% · CRITICAL <40%
+
+**Step 2 — Lebanese Risk Amplification**  
+Each of the 6 confirmed failure signals gets a Lebanese weight derived from two sources:
+- *iPark priority weight* — from Hani Haidar's Lebanon failure taxonomy (position in ranked list)
+- *Literature weight* — from World Bank, KAS/Arabnet, AGBI, HRW, Information International  
+- `FinalWeight = (iPark weight + Literature weight) / 2`
+
+**Step 3 — Global Adjusted Risk**  
+`AdjustedRisk = GlobalFeatureImportance × FinalWeight`  
+This re-ranks which failure signals matter most in Lebanon (not just amplifies everything equally).
+
+**Step 4 — Personal Risk Ranking**  
+`PersonalRisk = AdjustedRisk × (1 + gap)`  
+where `gap = max(0, median − yourValue) / median` — being below the dataset median increases your personal exposure.
+
+**Key finding from the notebook:**  
+Lebanon re-ranks, not just amplifies. `relationships` stays #1 but grows more dominant. `milestones` jumps to #2 because validating demand is harder when the market collapsed. `age_first_funding_year` drops to #3.
+
+**References:** Haidar & Nohra (2024), World Bank Lebanon Monitor, KAS/Arabnet 2022, AGBI 2024, Information International 2022, HRW 2023, CIDOB 2022.
+    """)
 
 # ── FOOTER ────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="footer">
-  iPark — Talal & Madiha Zein AUB Innovation Park &nbsp;·&nbsp;
-  ML Model: Random Forest · AUC 80% · 923 global startups &nbsp;·&nbsp;
-  Lebanese Risk Layer: Haidar & Nohra (2024) + Literature Review
-</div>""",unsafe_allow_html=True)
+  iPark — Talal &amp; Madiha Zein AUB Innovation Park &nbsp;·&nbsp;
+  ML Model: Random Forest · AUC 80% · 923 Crunchbase startups &nbsp;·&nbsp;
+  Lebanese Risk Layer: Haidar &amp; Nohra (2024) + Literature Review
+</div>""", unsafe_allow_html=True)
