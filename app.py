@@ -66,8 +66,8 @@ section[data-testid="stSidebar"] p { color: rgba(255,255,255,0.5) !important; }
 .about-text { font-size: 13px; color: #666; line-height: 1.7; margin-bottom: 1.5rem; }
 .about-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
 .about-item { background: #faf9f7; border-radius: 10px; padding: 1rem; }
-.about-item-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #999; margin-bottom: 6px; }
-.about-item-val { font-size: 13px; font-weight: 500; color: #1a1a1a; line-height: 1.5; }
+.about-item-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #777; margin-bottom: 6px; }
+.about-item-val { font-size: 13px; font-weight: 500; color: #333; line-height: 1.5; }
 
 .hero {
     background: linear-gradient(135deg, #6b1a2a 0%, #4a1020 100%);
@@ -94,16 +94,16 @@ section[data-testid="stSidebar"] p { color: rgba(255,255,255,0.5) !important; }
 
 .metric { background:white; border:1px solid #ece9e4; border-radius:16px; padding:1.5rem; position:relative; overflow:hidden; }
 .metric::after { content:''; position:absolute; bottom:0;left:0;right:0; height:3px; background:var(--a,#6b1a2a); }
-.metric-label { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#aaa; margin-bottom:8px; }
+.metric-label { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin-bottom:8px; }
 .metric-val { font-family:'Playfair Display',serif; font-size:2.4rem; font-weight:700; line-height:1; }
-.metric-desc { font-size:11px; color:#ccc; margin-top:6px; }
+.metric-desc { font-size:11px; color:#888; margin-top:6px; }
 
-.sec-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:#aaa; margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid #ece9e4; }
+.sec-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:#777; margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:1px solid #ece9e4; }
 
 .rbar { margin-bottom:0.85rem; }
 .rbar-head { display:flex; justify-content:space-between; margin-bottom:6px; }
 .rbar-label { font-size:13px; font-weight:500; color:#333; }
-.rbar-val { font-size:12px; color:#aaa; }
+.rbar-val { font-size:12px; color:#777; }
 .rbar-track { height:5px; background:#f0ede8; border-radius:3px; }
 .rbar-fill { height:100%; border-radius:3px; }
 
@@ -113,25 +113,19 @@ section[data-testid="stSidebar"] p { color: rgba(255,255,255,0.5) !important; }
 .tg-r { background:rgba(220,38,38,0.08); color:#dc2626; border:1px solid rgba(220,38,38,0.2); }
 
 .vbar-row { margin-bottom:12px; }
-.vbar-head { display:flex; justify-content:space-between; font-size:12px; color:#aaa; margin-bottom:6px; }
+.vbar-head { display:flex; justify-content:space-between; font-size:12px; color:#666; margin-bottom:6px; }
 .vbar-track { height:7px; background:#f0ede8; border-radius:4px; }
 .vbar-fill { height:100%; border-radius:4px; }
 
 .rec { background:white; border:1px solid #ece9e4; border-radius:16px; padding:1.5rem; border-top:3px solid var(--c,#6b1a2a); height:100%; }
-.rec-num { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#bbb; margin-bottom:6px; }
+.rec-num { font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:#888; margin-bottom:6px; }
 .rec-title { font-family:'Playfair Display',serif; font-size:15px; font-weight:700; margin-bottom:3px; }
-.rec-sub { font-size:11px; color:#bbb; margin-bottom:12px; font-style:italic; }
-.rec-act { font-size:12px; color:#555; padding:4px 0; border-bottom:1px solid #f5f2ee; }
+.rec-sub { font-size:11px; color:#888; margin-bottom:12px; font-style:italic; }
+.rec-act { font-size:12px; color:#444; padding:4px 0; border-bottom:1px solid #f5f2ee; }
 .rec-act:last-child { border-bottom:none; }
 .rec-act::before { content:'→ '; color:#6b1a2a; font-weight:600; }
 
-.weight-table { background:white; border:1px solid #ece9e4; border-radius:16px; padding:1.5rem; margin-top:1rem; }
-.weight-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f5f2ee; }
-.weight-row:last-child { border-bottom:none; }
-.weight-feat { font-size:12px; font-weight:500; color:#333; }
-.weight-badge { font-size:11px; padding:2px 8px; border-radius:100px; background:#faf9f7; border:1px solid #ece9e4; color:#666; }
-
-.footer { text-align:center; font-size:11px; color:#ccc; padding:2rem 0 1rem; letter-spacing:0.04em; }
+.footer { text-align:center; font-size:11px; color:#888; padding:2rem 0 1rem; letter-spacing:0.04em; }
 #MainMenu, footer, header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
@@ -435,11 +429,12 @@ c1, c2, c3 = st.columns(3)
 with c1:
     st.markdown(f'<div class="metric" style="--a:#6b1a2a"><div class="metric-label">Baseline Viability</div><div class="metric-val" style="color:#6b1a2a">{baseline:.1f}%</div><div class="metric-desc">Global ML · Random Forest · AUC 80%</div></div>', unsafe_allow_html=True)
 with c2:
-    st.markdown(f'<div class="metric" style="--a:{rc}"><div class="metric-label">Risk Level</div><div class="metric-val" style="color:{rc}">{risk_level}</div><div class="metric-desc">Based on baseline vs global survival thresholds</div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="metric" style="--a:{rc}"><div class="metric-label">Lebanon Risk Level</div><div class="metric-val" style="color:{rc}">{risk_level}</div><div class="metric-desc">Based on baseline vs global survival thresholds</div></div>', unsafe_allow_html=True)
 with c3:
-    top_risk_feat = top3[0]
+    top_risk_feat  = top3[0]
     top_risk_label = FEATURE_LABELS.get(top_risk_feat, top_risk_feat)
-    st.markdown(f'<div class="metric" style="--a:{IPARK_COLORS[top_risk_feat]}"><div class="metric-label">Highest Lebanese Risk</div><div class="metric-val" style="color:{IPARK_COLORS[top_risk_feat]};font-size:1.4rem">{top_risk_label}</div><div class="metric-desc">{IPARK_REASONS[top_risk_feat]}</div></div>', unsafe_allow_html=True)
+    top_risk_score = float(startup_df.loc[top_risk_feat, 'Personal Risk'])
+    st.markdown(f'<div class="metric" style="--a:{IPARK_COLORS[top_risk_feat]}"><div class="metric-label">Highest Lebanese Risk</div><div class="metric-val" style="color:{IPARK_COLORS[top_risk_feat]};font-size:1.6rem">{top_risk_label}</div><div class="metric-desc">{IPARK_REASONS[top_risk_feat]} · score {top_risk_score:.3f}</div></div>', unsafe_allow_html=True)
 
 st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
 
@@ -461,37 +456,39 @@ with left:
         <div class="rbar">
           <div class="rbar-head">
             <span class="rbar-label">{lbl} <span style="font-size:10px;color:#bbb;font-weight:400">· {reason}</span></span>
-            <span class="rbar-val">{rv:.4f} ({fw}×)</span>
+            <span class="rbar-val">{rv:.3f} ({round(fw,2)}×)</span>
           </div>
           <div class="rbar-track"><div class="rbar-fill" style="width:{pct}%;background:{col}"></div></div>
         </div>""", unsafe_allow_html=True)
 
 with right:
-    st.markdown('<div class="sec-title">Lebanese Weight Table</div>', unsafe_allow_html=True)
-    st.markdown('<div class="weight-table">', unsafe_allow_html=True)
-    for feat, info in sorted(LEBANON_RISKS.items(), key=lambda x: -x[1]['final_weight']):
-        lbl = FEATURE_LABELS.get(feat, feat)
-        col = IPARK_COLORS[feat]
-        fw  = info['final_weight']
-        st.markdown(f"""
-        <div class="weight-row">
-          <span class="weight-feat" style="color:{col}">● {lbl}</span>
-          <span class="weight-badge">{fw}×</span>
-        </div>""", unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    strengths = [f for f in startup_df.index if float(startup_df.loc[f,'Personal Risk']) <= float(adjusted_df.loc[f,'Adjusted Risk']) * 1.05]
+    gaps_l    = [f for f in startup_df.index if float(startup_df.loc[f,'Personal Risk']) > float(adjusted_df.loc[f,'Adjusted Risk']) * 1.2]
 
-    st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
-    st.markdown('<div class="sec-title">Baseline Score</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-title">Strengths</div>', unsafe_allow_html=True)
+    if strengths:
+        tags = "".join([f'<span class="tg tg-g">✓ {FEATURE_LABELS.get(f,f)}</span>' for f in strengths])
+        st.markdown(f'<div class="tag-row">{tags}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span style="font-size:12px;color:#777">No strong signals detected</span>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:1.25rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="sec-title">Gap Alerts</div>', unsafe_allow_html=True)
+    if gaps_l:
+        tags = "".join([f'<span class="tg tg-r">△ {FEATURE_LABELS.get(f,f)}</span>' for f in gaps_l])
+        st.markdown(f'<div class="tag-row">{tags}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<span style="font-size:12px;color:#777">No critical gaps detected</span>', unsafe_allow_html=True)
+
+    st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="sec-title">Viability Score</div>', unsafe_allow_html=True)
     st.markdown(f"""
     <div class="vbar-row">
-      <div class="vbar-head">
-        <span>Your startup (global ML)</span>
-        <span style="color:#6b1a2a;font-weight:600">{baseline:.1f}%</span>
-      </div>
+      <div class="vbar-head"><span>Baseline (Global ML)</span><span style="color:#6b1a2a;font-weight:600">{baseline:.1f}%</span></div>
       <div class="vbar-track"><div class="vbar-fill" style="width:{baseline}%;background:#6b1a2a"></div></div>
     </div>
-    <div style="font-size:10px;color:#bbb;margin-top:6px">
-      Thresholds: GOOD ≥70% · MODERATE 55–70% · HIGH 40–55% · CRITICAL &lt;40%
+    <div style="font-size:10px;color:#777;margin-top:6px">
+      GOOD ≥70% · MODERATE 55–70% · HIGH 40–55% · CRITICAL &lt;40%
     </div>""", unsafe_allow_html=True)
 
 st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
@@ -511,7 +508,7 @@ for i, (feat, col) in enumerate(zip(top3, [rc1, rc2, rc3]), 1):
     with col:
         st.markdown(f"""
         <div class="rec" style="--c:{color}">
-          <div class="rec-num">Priority #{i} · Risk {score:.4f} · Weight {fw}×</div>
+          <div class="rec-num">Priority #{i} · Personal Risk Score {score:.3f}</div>
           <div class="rec-title" style="color:{color}">{FEATURE_LABELS[feat]}</div>
           <div class="rec-sub">{info['iPark_reason']}</div>
           {acts}
@@ -526,23 +523,23 @@ A Random Forest model trained on 923 Crunchbase startups predicts your acquisiti
 Risk level thresholds: GOOD ≥70% · MODERATE 55–70% · HIGH 40–55% · CRITICAL <40%
 
 **Step 2 — Lebanese Risk Amplification**  
-Each of the 6 confirmed failure signals gets a Lebanese weight derived from two sources:
-- *iPark priority weight* — from Hani Haidar's Lebanon failure taxonomy (position in ranked list)
-- *Literature weight* — from World Bank, KAS/Arabnet, AGBI, HRW, Information International  
+Each of the 6 confirmed failure signals gets a Lebanese weight derived from two independent sources:
+- *iPark priority weight* — from Hani Haidar & Maria Nohra's Lebanon failure taxonomy (position in their ranked list of 11 Lebanon-specific failure reasons)
+- *Literature weight* — from World Bank, KAS/Arabnet, AGBI, HRW, Information International
 - `FinalWeight = (iPark weight + Literature weight) / 2`
 
 **Step 3 — Global Adjusted Risk**  
 `AdjustedRisk = GlobalFeatureImportance × FinalWeight`  
-This re-ranks which failure signals matter most in Lebanon (not just amplifies everything equally).
+This re-ranks which failure signals matter most in Lebanon — it does not simply amplify everything equally.
 
 **Step 4 — Personal Risk Ranking**  
 `PersonalRisk = AdjustedRisk × (1 + gap)`  
-where `gap = max(0, median − yourValue) / median` — being below the dataset median increases your personal exposure.
+where `gap = max(0, median − yourValue) / median` — being below the dataset median increases your personal exposure to that failure signal.
 
-**Key finding from the notebook:**  
-Lebanon re-ranks, not just amplifies. `relationships` stays #1 but grows more dominant. `milestones` jumps to #2 because validating demand is harder when the market collapsed. `age_first_funding_year` drops to #3.
+**Key finding:**  
+Lebanon re-ranks, not just amplifies. `relationships` stays #1 but becomes more dominant. `milestones` jumps to #2 because validating demand is harder when purchasing power has collapsed. `age_first_funding_year` drops to #3.
 
-**References:** Haidar & Nohra (2024), World Bank Lebanon Monitor, KAS/Arabnet 2022, AGBI 2024, Information International 2022, HRW 2023, CIDOB 2022.
+**Reference:** Haidar, H. & Nohra, M. (2024). *Why Startups Fail — Lebanon Version*. iPark, AUB Innovation Park.
     """)
 
 # ── FOOTER ────────────────────────────────────────────────────────────
