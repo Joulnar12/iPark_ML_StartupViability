@@ -126,7 +126,8 @@ section[data-testid="stSidebar"] p { color: rgba(255,255,255,0.5) !important; }
 .rec-act::before { content:'→ '; color:#6b1a2a; font-weight:600; }
 
 .footer { text-align:center; font-size:11px; color:#888; padding:2rem 0 1rem; letter-spacing:0.04em; }
-#MainMenu, footer, header { visibility: hidden; }
+#MainMenu, footer { visibility: hidden; }
+button[kind="header"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
